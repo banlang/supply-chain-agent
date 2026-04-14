@@ -1,20 +1,21 @@
 import json
 import re
 import pandas as pd
-from crewai import Task
+from pathlib import Path
 from crewai.tasks.task_output import TaskOutput
-from src.agents import data_analyst, risk_analyst, recommendation_agent
-from src.tools import inventory_analysis_tool, risk_detection_tool, supplier_comparison_tool
-from src.schemas import RiskDetectionOutput, ReorderReport
 
-VALID_RISK_LEVELS = {"Critical", "High", "Medium"}
+# Resolve path relative to this file: src/guardrails.py -> src/ -> project root
+_DATA_PATH = str(Path(__file__).parent.parent / "data" / "supply_chain_data.csv")
+
+VALID_RISK_LEVELS  = {"Critical", "High", "Medium"}
 INVALID_RISK_LEVELS = {"Very High", "Severe", "Extreme", "Low Risk", "Moderate", "Critical Risk", "High Risk"}
-VALID_SUPPLIERS = {"Supplier 1", "Supplier 2", "Supplier 3", "Supplier 4", "Supplier 5"}
-VALID_ACTIONS   = {"URGENT_REORDER", "REORDER", "MONITOR"}
+VALID_SUPPLIERS    = {"Supplier 1", "Supplier 2", "Supplier 3", "Supplier 4", "Supplier 5"}
+VALID_ACTIONS      = {"URGENT_REORDER", "REORDER", "MONITOR"}
 
-_supply_df = pd.read_csv("data/supply_chain_data.csv")
+# Load once at startup — used by all three guardrails
+_supply_df          = pd.read_csv(_DATA_PATH)
 _EXPECTED_SKU_COUNT = len(_supply_df)
-_ZERO_STOCK_SKUS = set(_supply_df.loc[_supply_df["Stock levels"] == 0, "SKU"])
+_ZERO_STOCK_SKUS    = set(_supply_df.loc[_supply_df["Stock levels"] == 0, "SKU"])
 
 
 def inventory_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
@@ -67,48 +68,6 @@ def risk_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
 
     return (True, output)
 
-inventory_analysis_task = Task(
-    description=(
-        "You MUST use the Inventory Analysis Tool to analyze the real dataset. "
-        "Do NOT generate or assume any data. "
-        "Call the tool with product_type='all' to get actual inventory data. "
-        "Then based on the real tool output, identify SKUs at risk of stockout "
-        "and prioritize by revenue density."
-    ),
-    expected_output=(
-        "A structured inventory report based ONLY on real data from the tool:\n"
-        "1. Summary: total SKUs analyzed, how many are at risk, how many are stockout\n"
-        "2. Top 5 urgent SKUs with: SKU code, product type, stock level, "
-        "days of stock remaining, revenue, and current supplier\n"
-        "3. One clear recommendation sentence per urgent SKU"
-    ),
-    tools=[inventory_analysis_tool],
-    agent=data_analyst,
-    guardrail=inventory_output_guardrail
-)
-
-risk_detection_task = Task(
-    description=(
-        "The Data Analyst has identified at-risk SKUs. Their findings are available "
-        "in your context.\n\n"
-        "Extract the SKU codes from the inventory report, then call the Risk Detection "
-        "Tool with those SKUs as a comma-separated string (e.g. 'SKU0,SKU5,SKU42'). "
-        "Do NOT pass 'all' — only analyze the at-risk SKUs from the previous report. "
-        "Do NOT invent risk scores or reasons. Use only what the tool returns."
-    ),
-    expected_output=(
-        "A risk classification report for every at-risk SKU:\n"
-        "1. Summary count: how many are Critical / High / Medium\n"
-        "2. Per SKU: risk level, score, supplier, and the specific flags that drove the score "
-        "(lead time, defect rate, inspection result)\n"
-        "3. One action recommendation per Critical SKU"
-    ),
-    tools=[risk_detection_tool],
-    agent=risk_analyst,
-    context=[inventory_analysis_task],
-    guardrail=risk_output_guardrail,
-    output_pydantic=RiskDetectionOutput
-)
 
 def reorder_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
     """
@@ -188,31 +147,3 @@ def reorder_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
             )
 
     return (True, output)
-
-
-reorder_recommendation_task = Task(
-    description=(
-        "You have the risk assessment from the Risk Analyst in your context.\n\n"
-        "For EVERY SKU in the risk report, call the Supplier Comparison Tool once per SKU "
-        "to get ranked supplier data. Do NOT skip any SKU. Do NOT call the tool with "
-        "multiple SKUs at once — one call per SKU.\n\n"
-        "When calling the tool, pass BOTH the sku AND the risk_level from the risk report "
-        "(e.g. sku='SKU3', risk_level='High').\n\n"
-        "The tool returns a RECOMMENDATION block with pre-calculated values — use them exactly:\n"
-        "  - action             : read from 'Action' line in the tool output\n"
-        "  - recommended_supplier: read from 'Recommended' line in the tool output\n"
-        "  - order_quantity     : read the integer from 'Order quantity' line in the tool output\n"
-        "  - rejected_suppliers : read from 'Rejected suppliers' line in the tool output\n"
-        "  - reason: one sentence combining risk level, why this supplier, and why this quantity\n\n"
-        "Do NOT invent supplier names, scores, or quantities. Use only what the tool returns."
-    ),
-    expected_output=(
-        "A reorder decision for every SKU from the risk report:\n"
-        "Per SKU: action, recommended supplier, order quantity, reason, rejected suppliers"
-    ),
-    tools=[supplier_comparison_tool],
-    agent=recommendation_agent,
-    context=[risk_detection_task],
-    guardrail=reorder_output_guardrail,
-    output_pydantic=ReorderReport
-)

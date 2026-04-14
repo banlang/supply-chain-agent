@@ -1,8 +1,12 @@
 import math
 import pandas as pd
+from pathlib import Path
 from crewai.tools import tool
 
-DATA_PATH = "data/supply_chain_data.csv"
+# Resolve path relative to this file so it works regardless of working directory
+# src/tools/custom_tool.py -> src/tools/ -> src/ -> project root
+_DATA_PATH = str(Path(__file__).parent.parent.parent / "data" / "supply_chain_data.csv")
+
 
 @tool("Inventory Analysis Tool")
 def inventory_analysis_tool(product_type: str = "all") -> str:
@@ -11,7 +15,7 @@ def inventory_analysis_tool(product_type: str = "all") -> str:
     Returns stock levels, demand, and revenue density for each SKU.
     Use product_type to filter: 'haircare', 'skincare', 'cosmetics', or 'all'
     """
-    df = pd.read_csv(DATA_PATH)
+    df = pd.read_csv(_DATA_PATH)
 
     if product_type != "all":
         df = df[df["Product type"].str.lower() == product_type.lower()]
@@ -53,7 +57,7 @@ def risk_detection_tool(sku_list: str = "all") -> str:
     Pass sku_list as comma-separated SKU codes e.g. "SKU0,SKU5,SKU42",
     or "all" to analyze every SKU in the dataset.
     """
-    df = pd.read_csv(DATA_PATH)
+    df = pd.read_csv(_DATA_PATH)
 
     if sku_list.strip().lower() != "all":
         skus = [s.strip() for s in sku_list.split(",")]
@@ -136,7 +140,7 @@ def supplier_comparison_tool(sku: str, risk_level: str = "Medium") -> str:
     Pass a single SKU code e.g. "SKU3" and the risk level from the Risk Analyst
     e.g. risk_level="Critical", "High", or "Medium" (default: "Medium").
     """
-    df = pd.read_csv(DATA_PATH)
+    df = pd.read_csv(_DATA_PATH)
 
     # --- Locate the requested SKU ---
     sku_row = df[df["SKU"] == sku]

@@ -2,6 +2,7 @@ import pytest
 import pandas as pd
 from unittest.mock import patch
 
+from pathlib import Path
 from src.tools import inventory_analysis_tool
 
 # ---------------------------------------------------------------------------
@@ -39,7 +40,7 @@ _func = inventory_analysis_tool.func
 @pytest.fixture(autouse=True)
 def mock_csv():
     """Patch pd.read_csv in tools module so tests never touch the real file."""
-    with patch("src.tools.pd.read_csv", return_value=SAMPLE_DF.copy()) as m:
+    with patch("src.tools.custom_tool.pd.read_csv", return_value=SAMPLE_DF.copy()) as m:
         yield m
 
 
@@ -163,7 +164,9 @@ class TestStockoutRisk:
 class TestCSVPath:
     def test_reads_from_correct_path(self, mock_csv):
         _func(product_type="all")
-        mock_csv.assert_called_once_with("data/supply_chain_data.csv")
+        called_path = mock_csv.call_args[0][0]
+        # _DATA_PATH is an absolute path resolved via pathlib — check the tail
+        assert called_path.endswith(str(Path("data") / "supply_chain_data.csv"))
 
     def test_reads_csv_once_per_call(self, mock_csv):
         _func(product_type="all")

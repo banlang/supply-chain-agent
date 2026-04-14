@@ -1,0 +1,52 @@
+inventory_analysis_task:
+  description: |
+    You MUST use the Inventory Analysis Tool to analyze the real dataset.
+    Do NOT generate or assume any data.
+    Call the tool with product_type='all' to get actual inventory data.
+    Then based on the real tool output, identify SKUs at risk of stockout
+    and prioritize by revenue density.
+  expected_output: |
+    A structured inventory report based ONLY on real data from the tool:
+    1. Summary: total SKUs analyzed, how many are at risk, how many are stockout
+    2. Top 5 urgent SKUs with: SKU code, product type, stock level,
+    days of stock remaining, revenue, and current supplier
+    3. One clear recommendation sentence per urgent SKU
+
+risk_detection_task:
+  description: |
+    The Data Analyst has identified at-risk SKUs. Their findings are available
+    in your context.
+
+    Extract the SKU codes from the inventory report, then call the Risk Detection
+    Tool with those SKUs as a comma-separated string (e.g. 'SKU0,SKU5,SKU42').
+    Do NOT pass 'all' — only analyze the at-risk SKUs from the previous report.
+    Do NOT invent risk scores or reasons. Use only what the tool returns.
+  expected_output: |
+    A risk classification report for every at-risk SKU:
+    1. Summary count: how many are Critical / High / Medium
+    2. Per SKU: risk level, score, supplier, and the specific flags that drove the score
+    (lead time, defect rate, inspection result)
+    3. One action recommendation per Critical SKU
+
+reorder_recommendation_task:
+  description: |
+    You have the risk assessment from the Risk Analyst in your context.
+
+    For EVERY SKU in the risk report, call the Supplier Comparison Tool once per SKU
+    to get ranked supplier data. Do NOT skip any SKU. Do NOT call the tool with
+    multiple SKUs at once — one call per SKU.
+
+    When calling the tool, pass BOTH the sku AND the risk_level from the risk report
+    (e.g. sku='SKU3', risk_level='High').
+
+    The tool returns a RECOMMENDATION block with pre-calculated values — use them exactly:
+      - action             : read from 'Action' line in the tool output
+      - recommended_supplier: read from 'Recommended' line in the tool output
+      - order_quantity     : read the integer from 'Order quantity' line in the tool output
+      - rejected_suppliers : read from 'Rejected suppliers' line in the tool output
+      - reason: one sentence combining risk level, why this supplier, and why this quantity
+
+    Do NOT invent supplier names, scores, or quantities. Use only what the tool returns.
+  expected_output: |
+    A reorder decision for every SKU from the risk report:
+    Per SKU: action, recommended supplier, order quantity, reason, rejected suppliers
