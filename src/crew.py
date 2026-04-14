@@ -20,7 +20,8 @@ def _load_yaml(filename: str) -> dict:
 
 
 class SupplyChainCrew:
-    def __init__(self):
+    def __init__(self, verbose: bool = True):
+        self._verbose  = verbose
         agents_cfg = _load_yaml("agents.yaml")
         tasks_cfg  = _load_yaml("tasks.yaml")
 
@@ -28,19 +29,19 @@ class SupplyChainCrew:
         self.data_analyst = Agent(
             **agents_cfg["data_analyst"],
             tools=[inventory_analysis_tool],
-            verbose=True,
+            verbose=verbose,
             llm="gpt-4o-mini",
         )
         self.risk_analyst = Agent(
             **agents_cfg["risk_analyst"],
             tools=[risk_detection_tool],
-            verbose=True,
+            verbose=verbose,
             llm="gpt-4o-mini",
         )
         self.recommendation_agent = Agent(
             **agents_cfg["recommendation_agent"],
             tools=[supplier_comparison_tool],
-            verbose=True,
+            verbose=verbose,
             llm="gpt-4o-mini",
         )
 
@@ -81,6 +82,6 @@ class SupplyChainCrew:
                 self.reorder_recommendation_task,
             ],
             process=Process.sequential,
-            verbose=True,
+            verbose=self._verbose,
         )
         return crew.kickoff()
