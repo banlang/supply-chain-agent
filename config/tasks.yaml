@@ -80,16 +80,17 @@ portfolio_synthesis_task:
     who will not read the individual SKU reports.
 
     CRITICAL FORMATTING RULE: Your final output MUST be formatted exactly with
-    these 3 Markdown headers. Do not omit them:
+    these 3 Markdown headers in this exact order (BLUF — executive audience).
+    Do not omit or reorder them:
 
-    ### 1. Key Insights
-    [Your bullet points here]
+    ### 1. Executive Summary
+    [Your single paragraph high-level overview here]
 
     ### 2. Critical Warnings
     [Your warnings starting with '!' here]
 
-    ### 3. Executive Summary
-    [Your single paragraph summary here]
+    ### 3. Key Insights
+    [Your bullet points with quantitative patterns here]
   expected_output: |
     A PortfolioInsight with:
     - patterns: list of concrete cross-SKU patterns, each citing specific SKU codes

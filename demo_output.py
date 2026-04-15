@@ -92,9 +92,8 @@ print(f"  PORTFOLIO INSIGHTS  (Agent 4)")
 print(divider)
 
 print()
-print("  ### 1. Key Insights")
-for pattern in insight.patterns:
-    print(f"  - {pattern}")
+print("  ### 1. Executive Summary")
+print(f"  {insight.executive_summary}")
 
 print()
 print("  ### 2. Critical Warnings")
@@ -105,7 +104,8 @@ else:
     print("  (none)")
 
 print()
-print("  ### 3. Executive Summary")
-print(f"  {insight.executive_summary}")
+print("  ### 3. Key Insights")
+for pattern in insight.patterns:
+    print(f"  - {pattern}")
 print()
 print(divider)
