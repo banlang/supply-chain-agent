@@ -22,6 +22,28 @@ Rejected suppliers: Supplier 5, Supplier 3, Supplier 2, Supplier 1
 
 > Without urgency-aware weighting, the system would have chosen Supplier 3 (best defect rate, but slowest lead time at 21.4 days). SKU68 has zero stock — speed wins.
 
+Agent 4 then synthesises all 5 decisions as a portfolio:
+
+```
+Patterns
+  - 2 of 3 haircare SKUs rely on Supplier 3 — supplier concentration raises
+    risk if Supplier 3 faces a disruption.
+  - 2 of 3 haircare SKUs are high-priority orders — haircare category is
+    over-represented in urgent decisions.
+  - SKU2 and SKU24 share the same supplier and lead time window — a single
+    delay event would affect both simultaneously.
+
+Concentration risks
+  ! Supplier 3 is the recommended supplier for 2 REORDER SKUs — any disruption
+    to Supplier 3 would require emergency re-sourcing for multiple products.
+
+Executive summary
+  The procurement portfolio reveals significant concentration risk: Supplier 3
+  handles multiple urgent haircare SKUs, creating a single point of failure.
+  Immediate action should diversify reorder decisions across at least two
+  suppliers wherever lead times allow.
+```
+
 ---
 
 ## How It Works — 4 Agents in Plain English
@@ -119,6 +141,9 @@ echo "OPENAI_API_KEY=sk-..." > .env
 
 # 3. Run the pipeline
 python -m src.main
+
+# 4. Clean summary output — no verbose logs
+python demo_output.py
 ```
 
 ---
