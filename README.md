@@ -22,26 +22,26 @@ Rejected suppliers: Supplier 5, Supplier 3, Supplier 2, Supplier 1
 
 > Without urgency-aware weighting, the system would have chosen Supplier 3 (best defect rate, but slowest lead time at 21.4 days). SKU68 has zero stock — speed wins.
 
-Agent 4 then synthesises all 5 decisions as a portfolio:
+Agent 4 then synthesises all 5 decisions as a portfolio (BLUF format — executive summary first):
 
 ```
-Patterns
+  ### 1. Executive Summary
+  The procurement portfolio reveals significant concentration risk: Supplier 3
+  handles multiple urgent haircare SKUs, creating a single point of failure.
+  Immediate action should diversify reorder decisions across at least two
+  suppliers wherever lead times allow.
+
+  ### 2. Critical Warnings
+  ! Supplier 3 is the recommended supplier for 2 REORDER SKUs — any disruption
+    to Supplier 3 would require emergency re-sourcing for multiple products.
+
+  ### 3. Key Insights
   - 2 of 3 haircare SKUs rely on Supplier 3 — supplier concentration raises
     risk if Supplier 3 faces a disruption.
   - 2 of 3 haircare SKUs are high-priority orders — haircare category is
     over-represented in urgent decisions.
   - SKU2 and SKU24 share the same supplier and lead time window — a single
     delay event would affect both simultaneously.
-
-Concentration risks
-  ! Supplier 3 is the recommended supplier for 2 REORDER SKUs — any disruption
-    to Supplier 3 would require emergency re-sourcing for multiple products.
-
-Executive summary
-  The procurement portfolio reveals significant concentration risk: Supplier 3
-  handles multiple urgent haircare SKUs, creating a single point of failure.
-  Immediate action should diversify reorder decisions across at least two
-  suppliers wherever lead times allow.
 ```
 
 ---
@@ -127,6 +127,7 @@ Receives the full set of reorder decisions from Agent 3 and reasons across all o
 | Output validation | Pydantic v2 |
 | Data processing | pandas |
 | Agent / task config | YAML (`config/agents.yaml`, `config/tasks.yaml`) |
+| Demo dashboard | Streamlit (`app.py`) |
 
 ---
 
