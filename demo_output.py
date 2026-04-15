@@ -1,6 +1,6 @@
 """
 demo_output.py — clean, LinkedIn-friendly summary of the Supply Chain AI pipeline.
-Runs all 3 agents silently and prints one decision line per SKU.
+Runs all 4 agents silently and prints one decision line per SKU plus portfolio insights.
 """
 from dotenv import load_dotenv
 load_dotenv()
