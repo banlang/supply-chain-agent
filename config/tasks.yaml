@@ -78,6 +78,18 @@ portfolio_synthesis_task:
 
     Then write a 2-3 sentence executive_summary for a procurement director
     who will not read the individual SKU reports.
+
+    CRITICAL FORMATTING RULE: Your final output MUST be formatted exactly with
+    these 3 Markdown headers. Do not omit them:
+
+    ### 1. Key Insights
+    [Your bullet points here]
+
+    ### 2. Critical Warnings
+    [Your warnings starting with '!' here]
+
+    ### 3. Executive Summary
+    [Your single paragraph summary here]
   expected_output: |
     A PortfolioInsight with:
     - patterns: list of concrete cross-SKU patterns, each citing specific SKU codes
