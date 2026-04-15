@@ -44,7 +44,12 @@ reorder_recommendation_task:
       - recommended_supplier: read from 'Recommended' line in the tool output
       - order_quantity     : read the integer from 'Order quantity' line in the tool output
       - rejected_suppliers : read from 'Rejected suppliers' line in the tool output
-      - reason: one sentence combining risk level, why this supplier, and why this quantity
+      - reason: MUST follow this exact template:
+          "The [SKU_ID] is at [Risk Level] risk; [Supplier Name] is selected due to
+          [Metric 1, e.g. lead time of X days] and [Metric 2, e.g. defect rate of Y%],
+          requiring an order of [Qty] units."
+          You MUST extract exact numeric values (lead time in days, defect rate %) from
+          the tool output. Do NOT use vague language like "lowest score" or "best option".
 
     Do NOT invent supplier names, scores, or quantities. Use only what the tool returns.
   expected_output: |

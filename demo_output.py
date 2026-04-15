@@ -1,10 +1,12 @@
 """
 demo_output.py — clean, LinkedIn-friendly summary of the Supply Chain AI pipeline.
 Runs all 4 agents silently and prints one decision line per SKU plus portfolio insights.
+Also saves results to demo_output.json for the Streamlit dashboard.
 """
 from dotenv import load_dotenv
 load_dotenv()
 
+import json
 import sys
 import logging
 sys.stdout.reconfigure(encoding="utf-8")
@@ -38,6 +40,16 @@ result = SupplyChainCrew(verbose=False).kickoff()
 # tasks_output[-1] = portfolio_synthesis_task
 report  = ReorderReport.model_validate_json(result.tasks_output[-2].raw)
 insight = PortfolioInsight.model_validate_json(result.tasks_output[-1].raw)
+
+# -- Cache to JSON for Streamlit dashboard ------------------------------------
+with open("demo_output.json", "w", encoding="utf-8") as f:
+    json.dump({
+        "decisions": [d.model_dump() for d in report.decisions],
+        "patterns": insight.patterns,
+        "concentration_risks": insight.concentration_risks,
+        "executive_summary": insight.executive_summary,
+    }, f, indent=2, ensure_ascii=False)
+print("Saved demo_output.json\n")
 
 # -- Format --------------------------------------------------------------------
 

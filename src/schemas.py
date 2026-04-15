@@ -42,7 +42,15 @@ class ReorderDecision(BaseModel):
         description="ceil(daily_demand x recommended_supplier_lead_time x 1.5)"
     )
     reason: str = Field(
-        description="One sentence combining risk level, supplier score, and why this quantity"
+        description=(
+            "Strictly follow this template: "
+            "'The [SKU_ID] is at [Risk Level] risk; [Supplier Name] is selected due to "
+            "[Metric 1, e.g. lead time of X days] and [Metric 2, e.g. defect rate of Y%], "
+            "requiring an order of [Qty] units.' "
+            "Example: 'The SKU68 is at High risk; Supplier 4 is selected due to the lowest "
+            "lead time of 14.5 days and a 0% defect rate, requiring an urgent order of 119 units.' "
+            "You MUST include exact numeric values from the tool output — no vague descriptions."
+        )
     )
     rejected_suppliers: List[str] = Field(
         description="All other suppliers that were considered but not recommended"

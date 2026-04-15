@@ -55,6 +55,7 @@ memory/
 demo_screenshot.png
 make_screenshot.py
 interview_prep*.html
+demo_output.json
 
 # =============================================================================
 # OS & Editor

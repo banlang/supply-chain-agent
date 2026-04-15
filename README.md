@@ -130,7 +130,7 @@ Receives the full set of reorder decisions from Agent 3 and reasons across all o
 
 ---
 
-## How to Run
+## Local Demo Quick Start
 
 ```bash
 # 1. Install dependencies
@@ -139,10 +139,22 @@ pip install -r requirements.txt
 # 2. Add your OpenAI key
 echo "OPENAI_API_KEY=sk-..." > .env
 
-# 3. Run the pipeline
+# 3. Run the pipeline — generates demo_output.json
+python demo_output.py
+
+# 4. Launch the dashboard
+streamlit run app.py
+```
+
+The dashboard reads from `demo_output.json` — no live API calls during the demo.
+
+## How to Run (CLI)
+
+```bash
+# Full pipeline with verbose agent logs
 python -m src.main
 
-# 4. Clean summary output — no verbose logs
+# Clean summary output — no verbose logs
 python demo_output.py
 ```
 
