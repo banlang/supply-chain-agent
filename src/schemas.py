@@ -51,3 +51,26 @@ class ReorderDecision(BaseModel):
 
 class ReorderReport(BaseModel):
     decisions: List[ReorderDecision]
+
+
+class PortfolioInsight(BaseModel):
+    patterns: List[str] = Field(
+        min_length=1,
+        description=(
+            "Cross-SKU patterns found. Each entry names the pattern and cites "
+            "the specific SKU codes involved, e.g. '3 of 5 SKUs are haircare — "
+            "category is over-represented in the at-risk portfolio'"
+        )
+    )
+    concentration_risks: List[str] = Field(
+        description=(
+            "Supplier or category concentration risks. Each entry names the "
+            "concentration and its business implication. Empty list if none found."
+        )
+    )
+    executive_summary: str = Field(
+        description=(
+            "2-3 sentence executive summary for procurement leadership, "
+            "synthesising the most critical portfolio-level insights"
+        )
+    )

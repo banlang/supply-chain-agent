@@ -7,8 +7,9 @@ from src.guardrails import (
     inventory_output_guardrail,
     risk_output_guardrail,
     reorder_output_guardrail,
+    portfolio_output_guardrail,
 )
-from src.schemas import RiskDetectionOutput, ReorderReport
+from src.schemas import RiskDetectionOutput, ReorderReport, PortfolioInsight
 
 # Resolve config dir relative to this file: src/crew.py -> src/ -> project root
 _CONFIG_DIR = Path(__file__).parent.parent / "config"
@@ -44,6 +45,12 @@ class SupplyChainCrew:
             verbose=verbose,
             llm="gpt-4o-mini",
         )
+        self.portfolio_synthesiser = Agent(
+            **agents_cfg["portfolio_synthesiser"],
+            tools=[],                    # no tools — pure LLM reasoning
+            verbose=verbose,
+            llm="gpt-4o-mini",
+        )
 
         # --- Tasks ---
         self.inventory_analysis_task = Task(
@@ -68,6 +75,13 @@ class SupplyChainCrew:
             guardrail=reorder_output_guardrail,
             output_pydantic=ReorderReport,
         )
+        self.portfolio_synthesis_task = Task(
+            **tasks_cfg["portfolio_synthesis_task"],
+            agent=self.portfolio_synthesiser,
+            context=[self.reorder_recommendation_task],
+            guardrail=portfolio_output_guardrail,
+            output_pydantic=PortfolioInsight,
+        )
 
     def kickoff(self):
         crew = Crew(
@@ -75,11 +89,13 @@ class SupplyChainCrew:
                 self.data_analyst,
                 self.risk_analyst,
                 self.recommendation_agent,
+                self.portfolio_synthesiser,
             ],
             tasks=[
                 self.inventory_analysis_task,
                 self.risk_detection_task,
                 self.reorder_recommendation_task,
+                self.portfolio_synthesis_task,
             ],
             process=Process.sequential,
             verbose=self._verbose,

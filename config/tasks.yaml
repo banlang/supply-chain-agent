@@ -50,3 +50,31 @@ reorder_recommendation_task:
   expected_output: |
     A reorder decision for every SKU from the risk report:
     Per SKU: action, recommended supplier, order quantity, reason, rejected suppliers
+
+portfolio_synthesis_task:
+  description: |
+    You have the complete reorder decisions for all SKUs in your context.
+    Do NOT call any tool. Your job is pure analysis and synthesis.
+
+    Look across ALL decisions simultaneously and identify patterns that are
+    invisible when SKUs are examined one at a time:
+
+    1. Supplier concentration — are multiple URGENT or REORDER SKUs relying
+       on the same recommended supplier? If that supplier fails, how many
+       SKUs are exposed?
+    2. Category risk — is one product type (haircare / skincare / cosmetics)
+       disproportionately represented in the high-urgency decisions?
+    3. Shared failure signals — do multiple SKUs share the same root cause
+       (e.g. all have Pending inspections, or all have lead times > 20 days)?
+    4. Combined exposure — where do multiple risk signals overlap on the same SKU?
+
+    For each pattern, name it, cite the specific SKU codes involved, and state
+    the business implication in one sentence.
+
+    Then write a 2-3 sentence executive_summary for a procurement director
+    who will not read the individual SKU reports.
+  expected_output: |
+    A PortfolioInsight with:
+    - patterns: list of concrete cross-SKU patterns, each citing specific SKU codes
+    - concentration_risks: supplier or category concentration risks found
+    - executive_summary: 2-3 sentence summary for procurement leadership

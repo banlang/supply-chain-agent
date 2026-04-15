@@ -11,7 +11,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 logging.disable(logging.CRITICAL)   # silence all library loggers before crew runs
 
 from src.crew import SupplyChainCrew
-from src.schemas import ReorderReport
+from src.schemas import ReorderReport, PortfolioInsight
 
 # -- Labels --------------------------------------------------------------------
 
@@ -34,7 +34,10 @@ print("Running Supply Chain AI pipeline... (this may take a minute)\n")
 result = SupplyChainCrew(verbose=False).kickoff()
 # CrewAI does not populate .pydantic on TaskOutput in this version —
 # parse the JSON from .raw directly.
-report = ReorderReport.model_validate_json(result.tasks_output[-1].raw)
+# tasks_output[-2] = reorder_recommendation_task
+# tasks_output[-1] = portfolio_synthesis_task
+report  = ReorderReport.model_validate_json(result.tasks_output[-2].raw)
+insight = PortfolioInsight.model_validate_json(result.tasks_output[-1].raw)
 
 # -- Format --------------------------------------------------------------------
 
@@ -67,4 +70,25 @@ print(
     f"REORDER: {counts['REORDER']}   "
     f"MONITOR: {counts['MONITOR']}"
 )
+print(divider)
+
+# -- Portfolio Insight (Agent 4) -----------------------------------------------
+
+print()
+print(divider)
+print(f"  PORTFOLIO INSIGHTS")
+print(divider)
+print()
+
+for pattern in insight.patterns:
+    print(f"  - {pattern}")
+
+if insight.concentration_risks:
+    print()
+    for risk in insight.concentration_risks:
+        print(f"  ! {risk}")
+
+print()
+print(f"  {insight.executive_summary}")
+print()
 print(divider)

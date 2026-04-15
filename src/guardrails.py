@@ -147,3 +147,21 @@ def reorder_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
             )
 
     return (True, output)
+
+
+def portfolio_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
+    """
+    Guardrail for portfolio_synthesis_task.
+    Checks:
+      1. Output references at least 2 distinct SKU codes — confirms cross-SKU
+         analysis rather than a single-SKU description.
+    """
+    sku_refs = set(re.findall(r'\bSKU\d+\b', output.raw))
+    if len(sku_refs) < 2:
+        return (
+            False,
+            "Portfolio synthesis must reference at least 2 distinct SKU codes. "
+            "Analyse patterns ACROSS all decisions in your context — "
+            "do not describe a single SKU in isolation.",
+        )
+    return (True, output)
