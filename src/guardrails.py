@@ -40,7 +40,7 @@ def inventory_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
             f"Reported {reported} SKUs but dataset has {_EXPECTED_SKU_COUNT}. Do not generate data."
         )
 
-    return (True, output)
+    return (True, output.raw)
 
 
 def risk_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
@@ -66,7 +66,7 @@ def risk_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
             "No valid risk levels found. Classify every SKU as Critical, High, or Medium."
         )
 
-    return (True, output)
+    return (True, output.raw)
 
 
 def reorder_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
@@ -105,7 +105,7 @@ def reorder_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
                     f"order_quantity for {d.sku} must be > 0, got {d.order_quantity}. "
                     f"Read the Order quantity line from the Supplier Comparison Tool output.",
                 )
-        return (True, output)
+        return (True, output.raw)
 
     # Fallback: parse raw JSON
     try:
@@ -146,7 +146,7 @@ def reorder_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
                 f"No valid supplier found. Use only: {', '.join(sorted(VALID_SUPPLIERS))}.",
             )
 
-    return (True, output)
+    return (True, output.raw)
 
 
 def portfolio_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
@@ -164,4 +164,4 @@ def portfolio_output_guardrail(output: TaskOutput) -> tuple[bool, str]:
             "Analyse patterns ACROSS all decisions in your context — "
             "do not describe a single SKU in isolation.",
         )
-    return (True, output)
+    return (True, output.raw)
