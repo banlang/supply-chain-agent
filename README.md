@@ -24,7 +24,7 @@ Rejected suppliers: Supplier 5, Supplier 3, Supplier 2, Supplier 1
 
 ---
 
-## How It Works — 3 Agents in Plain English
+## How It Works — 4 Agents in Plain English
 
 **Agent 1 — Supply Chain Data Analyst**
 Reads the full dataset (100 SKUs) and identifies which products are at risk of running out before the next replenishment arrives. It calculates days of stock remaining versus the supplier's lead time, then ranks the top 5 urgent SKUs by revenue density so the highest-value stockouts are always actioned first.
@@ -37,6 +37,10 @@ Takes the at-risk SKUs from Agent 1 and scores each one for supplier and quality
 **Agent 3 — Procurement Recommendation Agent**
 For every SKU in the risk report, it calls the Supplier Comparison Tool once per SKU, passing the risk level as context. The tool selects scoring weights based on urgency — if a SKU has zero stock it prioritises speed; if it just needs monitoring it prioritises cost — then calculates the recommended supplier, order quantity, and action code.
 *Output: Pydantic-validated reorder decisions with action, supplier, quantity, and rejected alternatives.*
+
+**Agent 4 — Portfolio Risk Synthesiser**
+Receives the full set of reorder decisions from Agent 3 and reasons across all of them simultaneously — no tools, pure LLM analysis. It surfaces patterns that are invisible when SKUs are examined one at a time: which suppliers are being relied on for multiple urgent SKUs, which product categories are over-represented in the risk list, and whether the combined exposure creates a systemic risk that individual decisions don't reveal.
+*Output: PortfolioInsight (Pydantic) with cross-SKU patterns, concentration risks, and an executive summary.*
 
 ---
 
@@ -76,6 +80,16 @@ For every SKU in the risk report, it calls the Supplier Comparison Tool once per
           │  Guard: valid supplier + action + qty > 0       │
           │         + stock=0 must be URGENT_REORDER        │
           │  Out  : ReorderReport (Pydantic)                │
+          └───────────────────────┬────────────────────────┘
+                                  │ context passed →
+          ┌───────────────────────▼────────────────────────┐
+          │      AGENT 4 — Portfolio Risk Synthesiser        │
+          │  Tool : none — pure LLM reasoning               │
+          │  Input: all decisions from Agent 3              │
+          │  Logic: cross-SKU pattern analysis              │
+          │         supplier concentration + category risk  │
+          │  Guard: must reference ≥ 2 distinct SKU codes   │
+          │  Out  : PortfolioInsight (Pydantic)             │
           └────────────────────────────────────────────────┘
 ```
 
@@ -144,3 +158,16 @@ The system determines the **action first** (from stock level + risk classificati
 | `MONITOR` | Medium risk, next cycle | 20% | 30% | **50%** |
 
 This is what caused the Supplier 3 vs Supplier 4 difference on SKU68: under balanced weights (40/40/20), Supplier 3 wins on defect rate. Under urgency weights (70/20/10), Supplier 4 wins because its lead time of 14.5 days is 7 days faster — which matters when the shelf is empty.
+
+### Why does Agent 4 have no tools?
+
+Agents 1–3 each use a tool because their core task is data retrieval or deterministic calculation — things the LLM should not guess. Agent 4's task is the opposite: synthesise patterns across decisions that are already in its context. There is no data to fetch and no formula to run. Giving it a tool would only introduce failure modes (wrong arguments, unnecessary calls) with no benefit. The LLM earns its place here precisely because cross-SKU pattern recognition — spotting that the same supplier appears across multiple urgent decisions, or that one category dominates the risk list — is the kind of reasoning LLMs are genuinely good at.
+
+### Manufacturing cost vs shipping cost — why manufacturing cost drives supplier selection?
+
+Both costs vary across suppliers in the dataset. Manufacturing cost spread across all 5 suppliers is **$21.09** (min $33.62, max $54.71). Shipping cost spread is only **$1.00** (min $5.34, max $6.34). Using shipping cost as a selection signal would create at most a $1 difference in the decision — well within noise. Manufacturing cost creates a meaningful $21 spread that is worth optimising, which is why the MONITOR weight profile allocates 50% to manufacturing cost and the supplier composite score uses it as the primary cost signal.
+
+| Cost type | Min | Max | Spread | Used in scoring |
+|---|---|---|---|---|
+| Manufacturing cost | $33.62 | $54.71 | $21.09 | Yes (mfg_cost weight) |
+| Shipping cost | $5.34 | $6.34 | $1.00 | No |
