@@ -88,19 +88,24 @@ print(divider)
 
 print()
 print(divider)
-print(f"  PORTFOLIO INSIGHTS")
+print(f"  PORTFOLIO INSIGHTS  (Agent 4)")
 print(divider)
-print()
 
+print()
+print("  ### 1. Key Insights")
 for pattern in insight.patterns:
     print(f"  - {pattern}")
 
+print()
+print("  ### 2. Critical Warnings")
 if insight.concentration_risks:
-    print()
     for risk in insight.concentration_risks:
         print(f"  ! {risk}")
+else:
+    print("  (none)")
 
 print()
+print("  ### 3. Executive Summary")
 print(f"  {insight.executive_summary}")
 print()
 print(divider)
