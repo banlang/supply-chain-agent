@@ -1,9 +1,10 @@
 # Supply Chain Intelligence Agent
 
-**85 out of 100 SKUs** in a real beauty/FMCG dataset are at risk of stockout right now.
-This system finds them, scores their supplier risk, and recommends exactly which supplier to reorder from — fully automated, end-to-end, in a single command.
+*Multi-agent AI system for supply chain risk detection, supplier optimisation, and portfolio-level decision support.*
 
-*Portfolio project built on a public Kaggle supply chain dataset ([Supply Chain Analysis](https://www.kaggle.com/datasets/harshsingh2209/supply-chain-analysis)).*
+**85 out of 100 SKUs** in a real beauty/FMCG dataset are at risk of stockout right now. This project demonstrates how agentic AI can support supply chain decision-making — identifying stockout risks, optimising supplier selection under real-world constraints (lead time, quality, cost), and surfacing portfolio-level risks such as supplier concentration.
+
+*Built on a public Kaggle supply chain dataset ([Supply Chain Analysis](https://www.kaggle.com/datasets/harshsingh2209/supply-chain-analysis)).*
 
 ---
 
@@ -20,7 +21,7 @@ Reason            : No stock remaining; Supplier 4 selected under URGENT weights
 Rejected suppliers: Supplier 5, Supplier 3, Supplier 2, Supplier 1
 ```
 
-> Without urgency-aware weighting, the system would have chosen Supplier 3 (best defect rate, but slowest lead time at 21.4 days). SKU68 has zero stock — speed wins.
+> Without urgency-aware weighting, this approach would have chosen Supplier 3 (best defect rate, but slowest lead time at 21.4 days). SKU68 has zero stock — speed wins.
 
 Agent 4 then synthesises all 5 decisions as a portfolio (BLUF format — executive summary first):
 
@@ -46,22 +47,33 @@ Agent 4 then synthesises all 5 decisions as a portfolio (BLUF format — executi
 
 ---
 
-## How It Works — 4 Agents in Plain English
+## Business Impact
+
+- Reduces stockout risk by identifying at-risk SKUs before replenishment windows close
+- Optimises supplier selection across competing constraints — lead time, defect rate, and manufacturing cost — weighted by urgency context
+- Surfaces supplier concentration risk that is invisible when SKUs are evaluated individually
+- Demonstrates how multi-agent AI augments procurement decision-making in supply chain operations
+
+This approach is extensible to enterprise environments, where it can be integrated with ERP systems and real-time inventory data to support continuous replenishment decisions.
+
+---
+
+## Decision Flow — Multi-Agent Orchestration
 
 **Agent 1 — Supply Chain Data Analyst**
-Reads the full dataset (100 SKUs) and identifies which products are at risk of running out before the next replenishment arrives. It calculates days of stock remaining versus the supplier's lead time, then ranks the top 5 urgent SKUs by revenue density so the highest-value stockouts are always actioned first.
+Analyses the full dataset (100 SKUs) to identify products at risk of running out before the next replenishment arrives. Calculates days of stock remaining versus supplier lead time, then ranks the top 5 urgent SKUs by revenue density — ensuring the highest-value stockouts are actioned first.
 *Output: ranked list of at-risk SKUs with stock levels, days remaining, and revenue.*
 
 **Agent 2 — Supply Chain Risk Analyst**
-Takes the at-risk SKUs from Agent 1 and scores each one for supplier and quality risk. It looks at three signals — lead time, defect rate, and inspection results — and assigns every SKU a risk level of Critical, High, or Medium using industry-standard thresholds (AQL 2.5% for defects, FMCG 14-day cycle for lead time).
+Scores each at-risk SKU for supplier and quality risk using three signals — lead time, defect rate, and inspection results — assigning a risk level of Critical, High, or Medium against industry-standard thresholds (AQL 2.5% for defects, FMCG 14-day cycle for lead time).
 *Output: structured risk report with score, flags, and classification per SKU.*
 
 **Agent 3 — Procurement Recommendation Agent**
-For every SKU in the risk report, it calls the Supplier Comparison Tool once per SKU, passing the risk level as context. The tool selects scoring weights based on urgency — if a SKU has zero stock it prioritises speed; if it just needs monitoring it prioritises cost — then calculates the recommended supplier, order quantity, and action code.
+For each SKU in the risk report, calls the Supplier Comparison Tool with urgency context. The tool selects scoring weights based on action type — prioritising speed for zero-stock SKUs, cost efficiency for monitoring cases — then calculates the recommended supplier, order quantity, and action code.
 *Output: Pydantic-validated reorder decisions with action, supplier, quantity, and rejected alternatives.*
 
 **Agent 4 — Portfolio Risk Synthesiser**
-Receives the full set of reorder decisions from Agent 3 and reasons across all of them simultaneously — no tools, pure LLM analysis. It surfaces patterns that are invisible when SKUs are examined one at a time: which suppliers are being relied on for multiple urgent SKUs, which product categories are over-represented in the risk list, and whether the combined exposure creates a systemic risk that individual decisions don't reveal.
+Reasons across the full set of reorder decisions simultaneously — no tools, pure LLM analysis. Surfaces patterns invisible at the individual SKU level: supplier concentration across urgent orders, category over-representation in the risk list, and whether combined exposure creates systemic risk.
 *Output: PortfolioInsight (Pydantic) with cross-SKU patterns, concentration risks, and an executive summary.*
 
 ---
@@ -187,7 +199,7 @@ Thresholds are anchored to the **FMCG standard replenishment cycle of 14 days**.
 
 A static composite score would always optimise for the same priorities regardless of context. But procurement decisions are not context-free. When a SKU has zero stock, the only thing that matters is how fast the supplier can deliver. When a SKU just needs monitoring, cost efficiency matters more than speed.
 
-The system determines the **action first** (from stock level + risk classification), then selects the matching weight profile before ranking suppliers:
+The approach determines the **action first** (from stock level + risk classification), then selects the matching weight profile before ranking suppliers:
 
 | Action | Situation | Lead time | Defect rate | Mfg cost |
 |---|---|---|---|---|
