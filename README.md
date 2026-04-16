@@ -2,7 +2,7 @@
 
 *Multi-agent AI system for supply chain risk detection, supplier optimisation, and portfolio-level decision support.*
 
-**85 out of 100 SKUs** in a real beauty/FMCG dataset are at risk of stockout right now. This project demonstrates how agentic AI can support supply chain decision-making — identifying stockout risks, optimising supplier selection under real-world constraints (lead time, quality, cost), and surfacing portfolio-level risks such as supplier concentration.
+**85 out of 100 SKUs** in a representative FMCG dataset are at risk of stockout right now. This project demonstrates how agentic AI can support supply chain decision-making — identifying stockout risks, optimising supplier selection under real-world constraints (lead time, quality, cost), and surfacing portfolio-level risks such as supplier concentration.
 
 *Built on a public Kaggle supply chain dataset ([Supply Chain Analysis](https://www.kaggle.com/datasets/harshsingh2209/supply-chain-analysis)).*
 
@@ -52,7 +52,8 @@ Agent 4 then synthesises all 5 decisions as a portfolio (BLUF format — executi
 - Reduces stockout risk by identifying at-risk SKUs before replenishment windows close
 - Optimises supplier selection across competing constraints — lead time, defect rate, and manufacturing cost — weighted by urgency context
 - Surfaces supplier concentration risk that is invisible when SKUs are evaluated individually
-- Demonstrates how multi-agent AI augments procurement decision-making in supply chain operations
+- Augments procurement decision-making through multi-agent AI orchestration
+- Supports more resilient supply chain planning by reducing single-supplier dependency risk
 
 This approach is extensible to enterprise environments, where it can be integrated with ERP systems and real-time inventory data to support continuous replenishment decisions.
 
@@ -61,7 +62,7 @@ This approach is extensible to enterprise environments, where it can be integrat
 ## Decision Flow — Multi-Agent Orchestration
 
 **Agent 1 — Supply Chain Data Analyst**
-Analyses the full dataset (100 SKUs) to identify products at risk of running out before the next replenishment arrives. Calculates days of stock remaining versus supplier lead time, then ranks the top 5 urgent SKUs by revenue density — ensuring the highest-value stockouts are actioned first.
+Analyses the full dataset (100 SKUs) to identify products at risk of running out before the next replenishment arrives. Calculates days of stock remaining versus supplier lead time, then ranks the top 5 urgent SKUs by revenue density — prioritising highest-value stockouts first.
 *Output: ranked list of at-risk SKUs with stock levels, days remaining, and revenue.*
 
 **Agent 2 — Supply Chain Risk Analyst**
@@ -73,7 +74,7 @@ For each SKU in the risk report, calls the Supplier Comparison Tool with urgency
 *Output: Pydantic-validated reorder decisions with action, supplier, quantity, and rejected alternatives.*
 
 **Agent 4 — Portfolio Risk Synthesiser**
-Reasons across the full set of reorder decisions simultaneously — no tools, pure LLM analysis. Surfaces patterns invisible at the individual SKU level: supplier concentration across urgent orders, category over-representation in the risk list, and whether combined exposure creates systemic risk.
+Synthesises decisions across all SKUs simultaneously — no tools, pure LLM analysis. Surfaces patterns invisible at the individual SKU level: supplier concentration across urgent orders, category over-representation in the risk list, and whether combined exposure creates systemic risk.
 *Output: PortfolioInsight (Pydantic) with cross-SKU patterns, concentration risks, and an executive summary.*
 
 ---
@@ -174,6 +175,8 @@ python demo_output.py
 ---
 
 ## Design Decisions
+
+Design choices are grounded in industry-standard supply chain practices to ensure realistic decision behaviour.
 
 ### Defect rate thresholds — why 2% and 4%?
 
