@@ -16,7 +16,7 @@ jobs:
 
       - name: Fetch and record traffic stats
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.TRAFFIC_PAT }}
           REPO: ${{ github.repository }}
         run: python .github/scripts/update_traffic_stats.py
 
