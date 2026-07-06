@@ -1,4 +1,4 @@
-![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fbanlang%2Fsupply-chain-agent&count_bg=%2379C0FF&title_bg=%23555555&icon=&icon_color=%23E5E5E5&title=views&edge_flat=false)
+![Views](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/banlang/supply-chain-agent/main/stats/badge.json)
 
 # Supply Chain Intelligence Agent
 
