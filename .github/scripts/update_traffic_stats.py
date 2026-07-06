@@ -6,7 +6,8 @@ import urllib.request
 REPO = os.environ["REPO"]
 TOKEN = os.environ["GH_TOKEN"]
 CSV_PATH = "stats/traffic-history.csv"
-BADGE_PATH = "stats/badge.json"
+VIEWS_BADGE_PATH = "stats/badge.json"
+CLONES_BADGE_PATH = "stats/badge-clones.json"
 FIELDS = ["date", "views", "unique_visitors", "clones", "unique_cloners"]
 
 
@@ -50,11 +51,20 @@ def main():
             writer.writerow(existing[date])
 
     total_views = sum(int(row["views"]) for row in existing.values())
-    with open(BADGE_PATH, "w") as f:
+    with open(VIEWS_BADGE_PATH, "w") as f:
         json.dump({
             "schemaVersion": 1,
             "label": "views",
             "message": str(total_views),
+            "color": "79C0FF",
+        }, f)
+
+    total_clones = sum(int(row["clones"]) for row in existing.values())
+    with open(CLONES_BADGE_PATH, "w") as f:
+        json.dump({
+            "schemaVersion": 1,
+            "label": "clones",
+            "message": str(total_clones),
             "color": "79C0FF",
         }, f)
 
