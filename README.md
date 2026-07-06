@@ -1,3 +1,5 @@
+![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fbanlang%2Fsupply-chain-agent&count_bg=%2379C0FF&title_bg=%23555555&icon=&icon_color=%23E5E5E5&title=views&edge_flat=false)
+
 # Supply Chain Intelligence Agent
 
 *Multi-agent AI system for supply chain risk detection, supplier optimisation, and portfolio-level decision support.*
