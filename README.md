@@ -1,5 +1,5 @@
-![Views](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/banlang/supply-chain-agent/main/stats/badge.json)
-![Clones](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/banlang/supply-chain-agent/main/stats/badge-clones.json)
+![Unique Visitors](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/banlang/supply-chain-agent/main/stats/badge.json)
+![Unique Cloners](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/banlang/supply-chain-agent/main/stats/badge-clones.json)
 ![Stars](https://img.shields.io/github/stars/banlang/supply-chain-agent?color=79C0FF)
 
 # Supply Chain Intelligence Agent

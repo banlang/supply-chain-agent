@@ -50,21 +50,21 @@ def main():
         for date in sorted(existing):
             writer.writerow(existing[date])
 
-    total_views = sum(int(row["views"]) for row in existing.values())
+    total_unique_visitors = sum(int(row["unique_visitors"]) for row in existing.values())
     with open(VIEWS_BADGE_PATH, "w") as f:
         json.dump({
             "schemaVersion": 1,
-            "label": "views",
-            "message": str(total_views),
+            "label": "unique visitors",
+            "message": str(total_unique_visitors),
             "color": "79C0FF",
         }, f)
 
-    total_clones = sum(int(row["clones"]) for row in existing.values())
+    total_unique_cloners = sum(int(row["unique_cloners"]) for row in existing.values())
     with open(CLONES_BADGE_PATH, "w") as f:
         json.dump({
             "schemaVersion": 1,
-            "label": "clones",
-            "message": str(total_clones),
+            "label": "unique cloners",
+            "message": str(total_unique_cloners),
             "color": "79C0FF",
         }, f)
 
