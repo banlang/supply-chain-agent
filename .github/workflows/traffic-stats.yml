@@ -1,0 +1,29 @@
+name: Track Repository Traffic
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # every Sunday 00:00 UTC (weekly, within GitHub's 14-day traffic window)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-traffic-stats:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch and record traffic stats
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: python .github/scripts/update_traffic_stats.py
+
+      - name: Commit updated stats
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add stats/traffic-history.csv
+          git diff --cached --quiet || git commit -m "chore: update traffic stats [skip ci]"
+          git push
