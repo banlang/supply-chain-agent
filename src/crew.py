@@ -8,8 +8,10 @@ from src.guardrails import (
     risk_output_guardrail,
     reorder_output_guardrail,
     portfolio_output_guardrail,
+    parse_decisions,
 )
 from src.schemas import RiskDetectionOutput, ReorderReport, PortfolioInsight
+from src.run_log import GuardrailRecorder
 
 # Resolve config dir relative to this file: src/crew.py -> src/ -> project root
 _CONFIG_DIR = Path(__file__).parent.parent / "config"
@@ -23,6 +25,9 @@ def _load_yaml(filename: str) -> dict:
 class SupplyChainCrew:
     def __init__(self, verbose: bool = True):
         self._verbose  = verbose
+        # Every guardrail call (pass/fail) is recorded for logs/run_log.jsonl
+        self.guardrail_recorder = GuardrailRecorder()
+        track = self.guardrail_recorder.wrap
         agents_cfg = _load_yaml("agents.yaml")
         tasks_cfg  = _load_yaml("tasks.yaml")
 
@@ -55,33 +60,57 @@ class SupplyChainCrew:
         # --- Tasks ---
         self.inventory_analysis_task = Task(
             **tasks_cfg["inventory_analysis_task"],
+            name="inventory_analysis_task",
             tools=[inventory_analysis_tool],
             agent=self.data_analyst,
-            guardrail=inventory_output_guardrail,
+            guardrail=track("inventory_analysis_task", inventory_output_guardrail),
         )
         self.risk_detection_task = Task(
             **tasks_cfg["risk_detection_task"],
+            name="risk_detection_task",
             tools=[risk_detection_tool],
             agent=self.risk_analyst,
             context=[self.inventory_analysis_task],
-            guardrail=risk_output_guardrail,
+            guardrail=track("risk_detection_task", risk_output_guardrail),
             output_pydantic=RiskDetectionOutput,
         )
         self.reorder_recommendation_task = Task(
             **tasks_cfg["reorder_recommendation_task"],
+            name="reorder_recommendation_task",
             tools=[supplier_comparison_tool],
             agent=self.recommendation_agent,
             context=[self.risk_detection_task],
-            guardrail=reorder_output_guardrail,
+            guardrail=track("reorder_recommendation_task", reorder_output_guardrail),
             output_pydantic=ReorderReport,
         )
         self.portfolio_synthesis_task = Task(
             **tasks_cfg["portfolio_synthesis_task"],
+            name="portfolio_synthesis_task",
             agent=self.portfolio_synthesiser,
             context=[self.reorder_recommendation_task],
-            guardrail=portfolio_output_guardrail,
+            guardrail=track("portfolio_synthesis_task", self._portfolio_guardrail),
             output_pydantic=PortfolioInsight,
         )
+
+    def _portfolio_guardrail(self, output):
+        # Agent 4 stays tool-free; its claims are fact-checked here against
+        # Agent 3's decisions (task.output is set once the reorder task passes).
+        reorder_output = self.reorder_recommendation_task.output
+        decisions = parse_decisions(reorder_output.raw) if reorder_output else None
+        return portfolio_output_guardrail(output, decisions)
+
+    @property
+    def model(self) -> str:
+        return self.data_analyst.llm.model
+
+    @property
+    def tasks(self) -> list:
+        return [
+            self.inventory_analysis_task,
+            self.risk_detection_task,
+            self.reorder_recommendation_task,
+            self.portfolio_synthesis_task,
+        ]
 
     def kickoff(self):
         crew = Crew(

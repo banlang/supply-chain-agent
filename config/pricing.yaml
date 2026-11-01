@@ -1,0 +1,12 @@
+# LLM price constants used to ESTIMATE run cost in logs/run_log.jsonl.
+# Source: OpenAI API pricing page (https://developers.openai.com/api/docs/pricing),
+# standard tier, USD per 1M tokens. Prices change — re-check before relying on them.
+
+prices_as_of: "2026-11-01"
+source: "https://developers.openai.com/api/docs/pricing"
+currency: USD
+per_million_tokens:
+  gpt-4o-mini:
+    input: 0.15
+    cached_input: 0.075
+    output: 0.60

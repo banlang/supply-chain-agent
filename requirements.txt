@@ -1,4 +1,4 @@
-crewai
+crewai>=1.14.4  # 1.14.4 fixes guardrail retries on tasks with output_pydantic
 openai
 pandas
 pydantic

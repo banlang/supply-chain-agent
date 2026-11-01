@@ -5,7 +5,7 @@
 
 *Multi-agent AI system for supply chain risk detection, supplier optimisation, and portfolio-level decision support.*
 
-**85 out of 100 SKUs** in a representative FMCG dataset are at risk of stockout right now. This project demonstrates how agentic AI can support supply chain decision-making — identifying stockout risks, optimising supplier selection under real-world constraints (lead time, quality, cost), and surfacing portfolio-level risks such as supplier concentration.
+Under a 30-day demand assumption, **85 of 100 SKUs** in a public beauty and personal-care supply chain dataset are flagged at risk of stockout (27 under a 365-day assumption). This project demonstrates how agentic AI can support supply chain decision-making — identifying stockout risks, optimising supplier selection under real-world constraints (lead time, quality, cost), and surfacing portfolio-level risks such as supplier concentration.
 
 *Built on a public Kaggle supply chain dataset ([Supply Chain Analysis](https://www.kaggle.com/datasets/harshsingh2209/supply-chain-analysis)).*
 
@@ -26,39 +26,63 @@ Rejected suppliers: Supplier 5, Supplier 3, Supplier 2, Supplier 1
 
 > Without urgency-aware weighting, this approach would have chosen Supplier 3 (best defect rate, but slowest lead time at 21.4 days). SKU68 has zero stock — speed wins.
 
-Agent 4 then synthesises all 5 decisions as a portfolio (BLUF format — executive summary first):
+Agent 4 then synthesises all 5 decisions as a portfolio (BLUF format — executive summary first).
+
+Output from run `run-20261101T160334-f16456`:
 
 ```
   ### 1. Executive Summary
-  The procurement portfolio reveals significant concentration risk: Supplier 3
-  handles multiple urgent haircare SKUs, creating a single point of failure.
-  Immediate action should diversify reorder decisions across at least two
-  suppliers wherever lead times allow.
+  The analysis reveals significant risk concentrations within our SKU portfolio, particularly in haircare products, which dominate high-urgency reorders. Furthermore, Supplier 3’s role across multiple SKUs heightens our exposure risk, necessitating immediate evaluation of supplier reliability and inventory strategies.
 
   ### 2. Critical Warnings
-  ! Supplier 3 is the recommended supplier for 2 REORDER SKUs — any disruption
-    to Supplier 3 would require emergency re-sourcing for multiple products.
+  ! Supplier 3 provides for multiple high-risk SKUs (SKU2, SKU24) — if Supplier 3 fails, 233 units are at risk
+  ! Supplier 1 is suggested for monitoring two SKUs (SKU16, SKU34) — a concentration of risk on decision-making regarding supplier performance
 
   ### 3. Key Insights
-  - 2 of 3 haircare SKUs rely on Supplier 3 — supplier concentration raises
-    risk if Supplier 3 faces a disruption.
-  - 2 of 3 haircare SKUs are high-priority orders — haircare category is
-    over-represented in urgent decisions.
-  - SKU2 and SKU24 share the same supplier and lead time window — a single
-    delay event would affect both simultaneously.
+  - 3 of 5 SKUs are haircare — category is over-represented in the at-risk portfolio
+  - 2 of 5 SKUs depend on Supplier 3 — potential impact from supplier failure affects 233 units
+  - 2 of 5 SKUs depend on Supplier 1 for monitoring — vulnerability in maintaining supplier reliability
 ```
+
+Every count, SKU, supplier, unit total and inspection claim in this output is fact-checked by a guardrail against Agent 3's decisions before it is accepted (see *Known limitations*).
 
 ---
 
-## Business Impact
+## What the prototype demonstrates
 
-- Reduces stockout risk by identifying at-risk SKUs before replenishment windows close
-- Optimises supplier selection across competing constraints — lead time, defect rate, and manufacturing cost — weighted by urgency context
-- Surfaces supplier concentration risk that is invisible when SKUs are evaluated individually
-- Augments procurement decision-making through multi-agent AI orchestration
-- Supports more resilient supply chain planning by reducing single-supplier dependency risk
+- Flags SKUs whose remaining stock will not cover supplier lead time, ranked by revenue density
+- Ranks suppliers across competing constraints — lead time, defect rate, and manufacturing cost — with weights that change by urgency
+- Surfaces supplier concentration that is not visible when SKUs are evaluated one at a time
+- Chains four agents with deterministic tools and code guardrails around each LLM step
 
-This approach is extensible to enterprise environments, where it can be integrated with ERP systems and real-time inventory data to support continuous replenishment decisions.
+## Persona views
+
+`streamlit run app.py` opens three tabs over the same real data (dataset, last pipeline run, and the logs in `logs/`). No view calls an LLM, and none shows seeded or simulated numbers: a metric that cannot be computed is shown as *Not measured in prototype*.
+
+| View | For | Question it answers |
+|---|---|---|
+| **Planner workbench** | Planner / procurement | *What must I decide today?* — queue ordered URGENT → REORDER → MONITOR, timing (days of cover vs. supplier lead time), evidence, SLA, and Approve / Edit / Reject with a required next step |
+| **Executive view** | Leadership / steering | *Is the AI helping the business?* — portfolio KPIs with context, Agent 4's fact-checked summary and concentration risks |
+| **AI Ops & Trust** | AI / IT / risk | *Should agents get more or less autonomy?* — LLM token cost per decision, guardrail retries, override and edit rates, audit trail, autonomy policy |
+
+The Executive headline and top-supplier tile use orders needing action now (URGENT_REORDER + REORDER); the all-orders share (incl. MONITOR) is shown as secondary text.
+
+Screenshots: [docs/screenshots/](docs/screenshots/). Reviewer actions are appended to `logs/decisions_log.jsonl`; each pipeline run to `logs/run_log.jsonl`. Setup and commands: [RUN_LOCAL.md](RUN_LOCAL.md).
+
+![Planner workbench](docs/screenshots/planner.png)
+
+## Known limitations
+
+- **Public sample data, not production.** Runs on a 100-SKU public Kaggle dataset; it has not been tested against real ERP or live inventory data.
+- **LLM synthesis is guarded, not guaranteed.** Agent 4 is pure LLM reasoning. Its counts, SKU codes, supplier claims, unit totals and inspection claims are fact-checked against Agent 3's decisions by `portfolio_output_guardrail`, and CrewAI retries on failure — but qualitative wording (e.g. "significant", "dominates") is not checked.
+- **Thresholds are assumptions.** Risk scoring is anchored to AQL 2.5 and a 14-day replenishment cycle assumption; neither has been calibrated to a specific business.
+- **No tracing enabled yet.** `logs/run_log.jsonl` records per-task duration, guardrail pass/fail and token usage, but individual prompts and responses are not traced.
+- **Urgency ignores days of cover.** Urgency is derived from supplier risk + zero stock only; it does not yet escalate SKUs whose days of cover are below lead time (e.g. SKU16/SKU34 are MONITOR with less than 1 day of cover — 0.21 and 0.05 days). Planned fix, not implemented.
+- **Demand period is assumed.** `daily_demand` assumes "Number of products sold" covers 30 days; the dataset does not state the period. Under a 365-day assumption, at-risk SKUs fall from 85 to 27 of 100.
+- **Lead times are supplier averages.** Supplier comparison and timing use each supplier's average lead time within the product category, not SKU-specific lead times.
+- **Order quantity is a heuristic.** Order quantity is a simple heuristic, ceil(daily demand × lead time × 1.5): no MOQ, demand variability or supplier capacity.
+- **Supplier switches are not qualified.** Supplier switches assume any supplier in the category can supply the SKU (no qualification, approved-vendor or contract check).
+- **Review policy is assumed.** Reviewer actions, SLA values and the autonomy rule in `config/policy.yaml` are prototype policy assumptions. Cost per run is an estimate from dated price constants in `config/pricing.yaml`.
 
 ---
 
@@ -69,7 +93,7 @@ Analyses the full dataset (100 SKUs) to identify products at risk of running out
 *Output: ranked list of at-risk SKUs with stock levels, days remaining, and revenue.*
 
 **Agent 2 — Supply Chain Risk Analyst**
-Scores each at-risk SKU for supplier and quality risk using three signals — lead time, defect rate, and inspection results — assigning a risk level of Critical, High, or Medium against industry-standard thresholds (AQL 2.5% for defects, FMCG 14-day cycle for lead time).
+Scores each at-risk SKU for supplier and quality risk using three signals — lead time, defect rate, and inspection results — assigning a risk level of Critical, High, or Medium anchored to AQL 2.5 (defects) and a 14-day cycle assumption (lead time).
 *Output: structured risk report with score, flags, and classification per SKU.*
 
 **Agent 3 — Procurement Recommendation Agent**
@@ -126,7 +150,8 @@ Synthesises decisions across all SKUs simultaneously — no tools, pure LLM anal
           │  Input: all decisions from Agent 3              │
           │  Logic: cross-SKU pattern analysis              │
           │         supplier concentration + category risk  │
-          │  Guard: must reference ≥ 2 distinct SKU codes   │
+          │  Guard: ≥ 2 SKUs + fact-check counts, SKUs,     │
+          │         suppliers vs Agent 3 decisions          │
           │  Out  : PortfolioInsight (Pydantic)             │
           └────────────────────────────────────────────────┘
 ```
@@ -163,7 +188,7 @@ python demo_output.py
 streamlit run app.py
 ```
 
-The dashboard reads from `demo_output.json` — no live API calls during the demo.
+The dashboard reads from `demo_output.json` and `logs/` — no live API calls during the demo. Exact Windows steps (tests, logs, screenshots): [RUN_LOCAL.md](RUN_LOCAL.md).
 
 ## How to Run (CLI)
 
@@ -179,11 +204,11 @@ python demo_output.py
 
 ## Design Decisions
 
-Design choices are grounded in industry-standard supply chain practices to ensure realistic decision behaviour.
+Thresholds are anchored to AQL 2.5 and a 14-day cycle assumption; they are reasonable defaults for a prototype, not calibrated values.
 
 ### Defect rate thresholds — why 2% and 4%?
 
-Thresholds follow the **AQL 2.5 standard** (Acceptable Quality Level), the international benchmark for consumer goods inspection (ISO 2859-1). A defect rate above 2% signals the supplier is approaching the tolerance boundary; above 4% means they have already breached it. These are not arbitrary numbers — they are the same thresholds used in audits across the FMCG and beauty industry.
+Thresholds are anchored to **AQL 2.5** (Acceptable Quality Level, ISO 2859-1), a common reference for consumer goods inspection. A defect rate above 2% is treated as approaching the tolerance boundary; above 4% as a breach. The 2% / 4% cut-offs are this prototype's interpretation, not values taken from a specific audit.
 
 | Defect rate | Signal | Score |
 |---|---|---|
@@ -193,7 +218,7 @@ Thresholds follow the **AQL 2.5 standard** (Acceptable Quality Level), the inter
 
 ### Lead time thresholds — why 10 days and 20 days?
 
-Thresholds are anchored to the **FMCG standard replenishment cycle of 14 days**. A lead time under 10 days is safe — the supplier delivers well within the cycle. Between 10 and 20 days means the order must be placed immediately to avoid a gap. Above 20 days means the supplier cannot reliably fit inside a single replenishment window, making any stockout event difficult to recover from in time.
+Thresholds are anchored to a **14-day replenishment cycle assumption**. A lead time under 10 days is safe — the supplier delivers well within the cycle. Between 10 and 20 days means the order must be placed immediately to avoid a gap. Above 20 days means the supplier cannot reliably fit inside a single replenishment window, making any stockout event difficult to recover from in time.
 
 | Lead time | Signal | Score |
 |---|---|---|

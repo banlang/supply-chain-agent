@@ -1,0 +1,36 @@
+# POLICY ASSUMPTION — prototype values, not an agreed business policy.
+# Shown in the UI with the label "policy assumption". Change here, not in code.
+
+label: "policy assumption"
+
+# Review SLA per action tier: time from recommendation (pipeline run end)
+# to a human decision. Derived from the action definitions in src/schemas.py:
+# URGENT_REORDER = "act within 24h", REORDER = "act this week",
+# MONITOR = "watch next cycle" (14-day cycle assumption).
+sla:
+  URGENT_REORDER: {hours: 24}
+  REORDER:        {days: 7}
+  MONITOR:        {days: 14}
+
+# Review mode per tier, to avoid review fatigue.
+review_mode:
+  URGENT_REORDER: one_by_one
+  REORDER:        one_by_one
+  MONITOR:        batch_allowed
+
+# Defer (reject → defer with re-check date) is not allowed for these tiers.
+no_defer_tiers: [URGENT_REORDER]
+
+autonomy:
+  min_decisions: 50
+  min_approval_rate: 0.95
+  max_edits: 0
+  rule: >-
+    A tier with at least 95% approval and no edits over at least 50 human
+    decisions is a candidate for sampled review (e.g. review 1 in 10) instead
+    of reviewing every item. No tier is ever auto-approved by this prototype.
+
+rerun_triggers: >-
+  Prototype: manual run on static CSV. Production design: scheduled after ERP
+  stock refresh; event-driven on stock threshold or supplier delay; on-demand
+  after reject.

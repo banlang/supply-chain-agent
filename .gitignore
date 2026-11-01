@@ -56,6 +56,9 @@ demo_screenshot.png
 make_screenshot.py
 demo_output.json
 
+# Run and reviewer logs — append-only, local only (see RUN_LOCAL.md to reset)
+logs/
+
 # =============================================================================
 # Personal notes — local only
 # =============================================================================
