@@ -62,14 +62,18 @@ Every count, SKU, supplier, unit total and inspection claim in this output is fa
 | View | For | Question it answers |
 |---|---|---|
 | **Planner workbench** | Planner / procurement | *What must I decide today?* — queue ordered URGENT → REORDER → MONITOR, timing (days of cover vs. supplier lead time), evidence, SLA, and Approve / Edit / Reject with a required next step |
-| **Executive view** | Leadership / steering | *Is the AI helping the business?* — portfolio KPIs with context, Agent 4's fact-checked summary and concentration risks |
+| **Executive view** | Leadership / steering | *Portfolio risk and decision status* — portfolio KPIs with context, Agent 4's fact-checked summary and concentration risks |
 | **AI Ops & Trust** | AI / IT / risk | *Should agents get more or less autonomy?* — LLM token cost per decision, guardrail retries, override and edit rates, audit trail, autonomy policy |
 
 The Executive headline and top-supplier tile use orders needing action now (URGENT_REORDER + REORDER); the all-orders share (incl. MONITOR) is shown as secondary text.
 
 Screenshots: [docs/screenshots/](docs/screenshots/). Reviewer actions are appended to `logs/decisions_log.jsonl`; each pipeline run to `logs/run_log.jsonl`. Setup and commands: [RUN_LOCAL.md](RUN_LOCAL.md).
 
-![Planner workbench](docs/screenshots/planner.png)
+![Planner workbench: the five recommendations from run run-20261101T160334-f16456 before review](docs/screenshots/planner_queue.png)
+*Planner workbench: the five recommendations from run `run-20261101T160334-f16456` before review*
+
+![Executive view after review: 3 approved · 2 overridden](docs/screenshots/exec.png)
+*Executive view after review: 3 approved · 2 overridden*
 
 ## Known limitations
 

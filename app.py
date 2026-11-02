@@ -6,6 +6,7 @@ Data sources (all produced by this repo — nothing is seeded or simulated):
   demo_output.json             last pipeline run (python demo_output.py)
   logs/run_log.jsonl           one line per pipeline run
   logs/decisions_log.jsonl     one line per reviewer action in this UI
+                               (path can be overridden with env var SCA_DECISIONS_LOG)
 
 Run: streamlit run app.py   (open a tab directly with ?tab=planner|exec|ops)
 """
@@ -291,7 +292,7 @@ with tab_planner:
 
 
 # ===========================================================================
-# B. EXECUTIVE VIEW — "Is the AI helping the business?"
+# B. EXECUTIVE VIEW — portfolio risk and decision status
 # ===========================================================================
 
 with tab_exec:

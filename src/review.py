@@ -7,6 +7,7 @@ data — every statistic is computed from logs/decisions_log.jsonl, which only
 grows when a real reviewer acts in the Streamlit UI.
 """
 import json
+import os
 import statistics
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -17,7 +18,8 @@ from src.analytics import ACTION_ORDER
 
 _ROOT         = Path(__file__).parent.parent
 LOG_DIR       = _ROOT / "logs"
-DECISIONS_LOG = LOG_DIR / "decisions_log.jsonl"
+# SCA_DECISIONS_LOG overrides the path (used by scripts/take_screenshots.py for a pre-review view)
+DECISIONS_LOG = Path(os.environ.get("SCA_DECISIONS_LOG") or LOG_DIR / "decisions_log.jsonl")
 POLICY_PATH   = _ROOT / "config" / "policy.yaml"
 
 FINAL_ACTIONS = ("approved", "edited", "rejected")

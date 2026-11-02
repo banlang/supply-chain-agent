@@ -5,7 +5,11 @@ review queue (recompute versions, defer), override/edit rates, autonomy.
 All log files are written to pytest's tmp_path — never to logs/.
 """
 import json
+import os
+import subprocess
+import sys
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 
@@ -15,6 +19,7 @@ from src.review import (
     recommendation_id, reject_path_breakdown, sla_status, time_to_decision_hours,
 )
 
+ROOT = Path(__file__).parent.parent
 POLICY = load_policy()
 T0 = datetime(2026, 11, 1, 9, 0, tzinfo=timezone.utc)
 RUN = "run-test"
@@ -154,6 +159,25 @@ class TestMakeEntry:
 # ---------------------------------------------------------------------------
 # Log writing
 # ---------------------------------------------------------------------------
+
+def _decisions_log_path(env_value):
+    # Fresh interpreter: DECISIONS_LOG is resolved at import time
+    env = {k: v for k, v in os.environ.items() if k != "SCA_DECISIONS_LOG"}
+    if env_value is not None:
+        env["SCA_DECISIONS_LOG"] = env_value
+    out = subprocess.run([sys.executable, "-c", "from src.review import DECISIONS_LOG; print(DECISIONS_LOG)"],
+                         cwd=ROOT, env=env, capture_output=True, text=True, check=True)
+    return Path(out.stdout.strip())
+
+
+class TestDecisionsLogPath:
+    def test_default_is_logs_folder(self):
+        assert _decisions_log_path(None) == ROOT / "logs" / "decisions_log.jsonl"
+
+    def test_env_var_overrides(self, tmp_path):
+        target = tmp_path / "empty.jsonl"
+        assert _decisions_log_path(str(target)) == target
+
 
 class TestLogFile:
     def test_append_only_jsonl(self, tmp_path):

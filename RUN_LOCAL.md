@@ -36,7 +36,7 @@ pip install websocket-client      # only needed for step 8 (screenshots)
 python -m pytest -q
 ```
 
-Expect `179 passed`. Tests never call the LLM and never write to `logs/` (they use temporary folders).
+Expect `181 passed`. Tests never call the LLM and never write to `logs/` (they use temporary folders).
 
 ## 5. Run the pipeline (calls OpenAI — costs a fraction of a cent)
 
@@ -74,7 +74,7 @@ Get-Content logs\decisions_log.jsonl
 python scripts\take_screenshots.py
 ```
 
-Starts the app headless on port 8599, opens each tab in headless Chrome (or Edge) at 1600 px wide and saves `docs\screenshots\planner.png`, `exec.png`, `ops.png`. It clicks nothing and writes no logs. Close any app already using port 8599 first.
+Starts the app headless on port 8599, opens each tab in headless Chrome (or Edge) at 1600 px wide and saves `docs\screenshots\planner.png`, `exec.png`, `ops.png` (current state). It also saves `planner_queue.png` from a second app on port 8598 that reads an empty temporary decisions log (via `SCA_DECISIONS_LOG`, deleted afterwards), showing the current run before any review. It clicks nothing and writes no logs. Close any app already using ports 8598–8599 first.
 
 ## 9. Reset the logs
 
