@@ -3,7 +3,7 @@
 
 # Supply Chain Intelligence Agent
 
-*Multi-agent AI system for supply chain risk detection, supplier optimisation, and portfolio-level decision support.*
+*A multi-agent AI decision-support system that identifies inventory risk, evaluates supplier trade-offs, and surfaces portfolio-level supply chain exposure.*
 
 Under a 30-day demand assumption, **85 of 100 SKUs** in a public beauty and personal-care supply chain dataset are flagged at risk of stockout (27 under a 365-day assumption). This project demonstrates how agentic AI can support supply chain decision-making — identifying stockout risks, optimising supplier selection under real-world constraints (lead time, quality, cost), and surfacing portfolio-level risks such as supplier concentration.
 
@@ -11,20 +11,21 @@ Under a 30-day demand assumption, **85 of 100 SKUs** in a public beauty and pers
 
 ---
 
-## Real Output Example
+## Worked example: SKU68 (run `run-20261101T160334-f16456`)
 
 ```
 SKU68 | haircare | stock = 0 units | daily demand = 5.43 units/day
 
 Action            : URGENT_REORDER
-Recommended       : Supplier 4  (lead time 14.5d — fastest available)
+Recommended       : Supplier 4  (avg lead time 14.5d across haircare suppliers — fastest among the evaluated suppliers)
 Order quantity    : 119 units   [calc: ceil(5.43 × 14.5d × 1.5)]
-Reason            : No stock remaining; Supplier 4 selected under URGENT weights
-                    (lead time 70%) — delivers 7 days faster than Supplier 3.
+Reason            : The SKU68 is at High risk; Supplier 4 is selected due to lead time of 14.5 days and defect rate of 2.58%, requiring an order of 119 units.
 Rejected suppliers: Supplier 5, Supplier 3, Supplier 2, Supplier 1
 ```
 
-> Without urgency-aware weighting, this approach would have chosen Supplier 3 (best defect rate, but slowest lead time at 21.4 days). SKU68 has zero stock — speed wins.
+The action is URGENT_REORDER because stock is 0 (stock = 0 always means URGENT_REORDER); the Reason line is the agent's own wording, shown verbatim.
+
+> Without urgency-aware weighting, this approach would have chosen Supplier 3 (best defect rate, but slowest lead time at 21.4 days). Supplier 4 is about 7 days faster than Supplier 3 on average, and SKU68 has zero stock — speed wins.
 
 Agent 4 then synthesises all 5 decisions as a portfolio (BLUF format — executive summary first).
 
@@ -57,12 +58,12 @@ Every count, SKU, supplier, unit total and inspection claim in this output is fa
 
 ## Persona views
 
-`streamlit run app.py` opens three tabs over the same real data (dataset, last pipeline run, and the logs in `logs/`). No view calls an LLM, and none shows seeded or simulated numbers: a metric that cannot be computed is shown as *Not measured in prototype*.
+`streamlit run app.py` opens three tabs over the same recorded pipeline outputs and review logs (public dataset). No view calls an LLM, and none shows seeded or simulated numbers: a metric that cannot be computed is shown as *Not measured in prototype*.
 
 | View | For | Question it answers |
 |---|---|---|
 | **Planner workbench** | Planner / procurement | *What must I decide today?* — queue ordered URGENT → REORDER → MONITOR, timing (days of cover vs. supplier lead time), evidence, SLA, and Approve / Edit / Reject with a required next step |
-| **Executive view** | Leadership / steering | *Portfolio risk and decision status* — portfolio KPIs with context, Agent 4's fact-checked summary and concentration risks |
+| **Executive view** | Leadership / steering | *Where are the portfolio risks, and which decisions were approved or overridden?* — portfolio KPIs with context, Agent 4's fact-checked summary and concentration risks |
 | **AI Ops & Trust** | AI / IT / risk | *Should agents get more or less autonomy?* — LLM token cost per decision, guardrail retries, override and edit rates, audit trail, autonomy policy |
 
 The Executive headline and top-supplier tile use orders needing action now (URGENT_REORDER + REORDER); the all-orders share (incl. MONITOR) is shown as secondary text.
@@ -121,8 +122,8 @@ Synthesises decisions across all SKUs simultaneously — no tools, pure LLM anal
           │           AGENT 1 — Data Analyst               │
           │  Tool : Inventory Analysis Tool                 │
           │  Input: product_type="all"  (100 SKUs)          │
-          │  Logic: days_of_stock < stock_needed → at risk  │
-          │         rank by revenue_density                 │
+          │  Logic: stock < daily_demand × lead time        │
+          │         → at risk; rank by revenue_density      │
           │  Guard: must contain real SKU codes + count=100 │
           │  Out  : top-5 at-risk SKUs + revenue context    │
           └───────────────────────┬────────────────────────┘
@@ -232,7 +233,7 @@ Thresholds are anchored to a **14-day replenishment cycle assumption**. A lead t
 
 ### Supplier scoring weights — why do they change per urgency level?
 
-A static composite score would always optimise for the same priorities regardless of context. But procurement decisions are not context-free. When a SKU has zero stock, the only thing that matters is how fast the supplier can deliver. When a SKU just needs monitoring, cost efficiency matters more than speed.
+A static composite score would always optimise for the same priorities regardless of context. But procurement decisions are not context-free. When a SKU has zero stock, delivery speed becomes the primary consideration, while quality and cost remain part of the decision. When a SKU just needs monitoring, cost efficiency matters more than speed.
 
 The approach determines the **action first** (from stock level + risk classification), then selects the matching weight profile before ranking suppliers:
 
@@ -242,7 +243,7 @@ The approach determines the **action first** (from stock level + risk classifica
 | `REORDER` | High risk, restock this week | 40% | **40%** | 20% |
 | `MONITOR` | Medium risk, next cycle | 20% | 30% | **50%** |
 
-This is what caused the Supplier 3 vs Supplier 4 difference on SKU68: under balanced weights (40/40/20), Supplier 3 wins on defect rate. Under urgency weights (70/20/10), Supplier 4 wins because its lead time of 14.5 days is 7 days faster — which matters when the shelf is empty.
+This is what caused the Supplier 3 vs Supplier 4 difference on SKU68: under balanced weights (40/40/20), Supplier 3 narrowly wins on defect rate (composite 0.486 vs 0.493; lower is better). Under urgency weights (70/20/10), Supplier 4 wins because its average lead time of 14.5 days is about 7 days faster than Supplier 3 on average — which matters when the shelf is empty.
 
 ### Why does Agent 4 have no tools?
 
@@ -250,9 +251,11 @@ Agents 1–3 each use a tool because their core task is data retrieval or determ
 
 ### Manufacturing cost vs shipping cost — why manufacturing cost drives supplier selection?
 
-Both costs vary across suppliers in the dataset. Manufacturing cost spread across all 5 suppliers is **$21.09** (min $33.62, max $54.71). Shipping cost spread is only **$1.00** (min $5.34, max $6.34). Using shipping cost as a selection signal would create at most a $1 difference in the decision — well within noise. Manufacturing cost creates a meaningful $21 spread that is worth optimising, which is why the MONITOR weight profile allocates 50% to manufacturing cost and the supplier composite score uses it as the primary cost signal.
+Both costs vary across suppliers. Within this dataset, the per-supplier average manufacturing cost across the 5 suppliers spreads **$21.09** (min $41.62, max $62.71). The per-supplier average shipping cost spreads only **$1.00** (min $4.79, max $5.79). Using shipping cost as a selection signal would create at most about a $1 difference in the decision — well within noise. Manufacturing cost creates a meaningful $21 spread that is worth optimising, which is why the MONITOR weight profile allocates 50% to manufacturing cost and the supplier composite score uses it as the primary cost signal.
 
-| Cost type | Min | Max | Spread | Used in scoring |
+The table shows per-supplier averages across the whole dataset; scoring itself uses each supplier's average within the SKU's product category.
+
+| Cost type (per-supplier average, within this dataset) | Min | Max | Spread | Used in scoring |
 |---|---|---|---|---|
-| Manufacturing cost | $33.62 | $54.71 | $21.09 | Yes (mfg_cost weight) |
-| Shipping cost | $5.34 | $6.34 | $1.00 | No |
+| Manufacturing cost | $41.62 | $62.71 | $21.09 | Yes (mfg_cost weight, per-category average) |
+| Shipping cost | $4.79 | $5.79 | $1.00 | No |
